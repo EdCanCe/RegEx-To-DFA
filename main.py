@@ -86,7 +86,7 @@ class preprocessing:
 
             case '_':
                 if (len(operands) == 1): # If it's only one token, it returns as itself
-                    return operands[0]
+                    return "." + operands[0]
                 newRegex = operation
                 for i in operands:
                     newRegex += '(' + preprocessing.prefixNotation(i) + ')'
@@ -99,7 +99,104 @@ class preprocessing:
         return newRegex
 
 
+class nfa:
+    connections = []
+    operators = ['|', '*', '+', '_', '.']
+
+    def newNode():
+        connectTemplate = [len(nfa.connections)]
+        nfa.connections.append(connectTemplate)
+        return len(nfa.connections) - 1
+
+    def connect(expression, node1, node2, weight):
+        print(str(node1) + " -> " + str(node2) + '[label="' + str(weight) + '"] //' + expression) # (a|b)*abb
+        nfa.connections[node1].append([node2, weight])
+
+    def getOperands(expression):
+        operands = []
+        i = 0
+        while(i < len(expression)):
+            extra = 1
+            j = i
+            if (expression[i] == '('): # The tokens inside a parenthesis will pass on exactly as they are
+                parenthesis = 1
+                j += 1
+                while(parenthesis != 0):
+                    if (expression[j] == '('): parenthesis += 1
+                    elif (expression[j] == ')'): parenthesis -= 1
+                    j += 1
+                j -= 1
+                extra += j - i                
+                operands.append(expression[i+1:i+extra-1])
+            i += extra
+        return operands
+    
+    def getValue(expression):
+        return expression[1]
+
+    def model(startNode, expression):
+        currentOperation = expression[0]
+        expressionOperands = nfa.getOperands(expression)    
+        expressionNodes = []
+
+        for i in expressionOperands:
+            travelNode = nfa.model(startNode, i)
+            startNode = nfa.newNode()
+            expressionNodes.append(travelNode)
+
+        endNode = nfa.newNode()
+        match currentOperation:
+            case '|':
+                print("//OR: "+str(expressionNodes))
+                nfa.connect(expression, startNode, expressionNodes[0][0], '#')
+                nfa.connect(expression, startNode, expressionNodes[1][0], '#')
+                endNode = nfa.newNode()
+                nfa.connect(expression, expressionNodes[0][1], endNode, '#')
+                nfa.connect(expression, expressionNodes[1][1], endNode, '#')
+
+            case '_':
+                print("//CONCAT: "+str(expressionNodes))
+                i = 0
+                startNode = expressionNodes[0][0]
+                endNode = expressionNodes[len(expressionNodes)-1][1]
+                while (i < len(expressionNodes) - 1):
+                    nfa.connect(expression, expressionNodes[i][1], expressionNodes[i+1][0], '#')
+                    i += 1
+
+            case '*':
+                print("//STAR: "+str(expressionNodes))
+                startNode = expressionNodes[0][0]
+                nfa.connect(expression, startNode, endNode, '#')
+                nfa.connect(expression, endNode, startNode, '#')
+                nfa.connect(expression, expressionNodes[0][1], endNode, '#')
+
+            case '+':
+                print("//PLUS: "+str(expressionNodes))
+                startNode = expressionNodes[0][0]
+                nfa.connect(expression, endNode, startNode, '#')
+                nfa.connect(expression, expressionNodes[0][1], endNode, '#')
+
+            case '.':
+                print("//DOT: "+str(expressionNodes))
+                nfa.connect(expression, startNode, endNode, nfa.getValue(expression))
+
+        return [startNode, endNode]
+    
+    def print(regEx):
+        nfa.newNode()
+        coords = nfa.model(0, preprocessing.prefixNotation(regEx))
+        connections = nfa.connections[:len(nfa.connections)-1]
+        for i in connections:
+            output = str(i[0]) + " => ["
+            for j in range(len(i)):
+                if(j == 0): continue
+                output += "(" + str(i[j][0]) + ", " + str(i[j][1]) + ")"
+                if(j < len(i) - 1): output += ", " 
+            output += "]"
+            print(output)
+        print("Starting at: " + str(coords[0]))
+        print("Ending at: " + str(coords[1]))
+
 
 regEx = input("Type your regular expression: ")
-
-print(str(preprocessing.prefixNotation(regEx)))
+nfa.print(regEx)

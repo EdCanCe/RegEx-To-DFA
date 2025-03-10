@@ -103,15 +103,18 @@ class nfa:
     connections = []
     operators = ['|', '*', '+', '_', '.']
 
+    # Generates a new node
     def newNode():
         connectTemplate = [len(nfa.connections)]
         nfa.connections.append(connectTemplate)
         return len(nfa.connections) - 1
 
+    # Connects 2 nodes
     def connect(expression, node1, node2, weight):
-        print(str(node1) + " -> " + str(node2) + '[label="' + str(weight) + '"] //' + expression) # (a|b)*abb
+        print(str(node1) + " -> " + str(node2) + '[label="' + str(weight) + '"] //' + expression) # (a|b)*abb  # ? <- Only for debbuging
         nfa.connections[node1].append([node2, weight])
 
+    # Given a expression, separates it based on it's operands
     def getOperands(expression):
         operands = []
         i = 0
@@ -126,28 +129,30 @@ class nfa:
                     elif (expression[j] == ')'): parenthesis -= 1
                     j += 1
                 j -= 1
-                extra += j - i                
-                operands.append(expression[i+1:i+extra-1])
-            i += extra
+                extra += j - i
+                operands.append(expression[i+1:i+extra-1]) 
+            i += extra # Adds to the index the length of the operand
         return operands
     
+    # Gets the character with expressions with this format .X
     def getValue(expression):
         return expression[1]
 
+    # Gets the nfa model for an expression
     def model(startNode, expression):
-        currentOperation = expression[0]
-        expressionOperands = nfa.getOperands(expression)    
-        expressionNodes = []
+        currentOperation = expression[0] # Since it's in prefix notation, the first character has the expression
+        expressionOperands = nfa.getOperands(expression) # Separates between components
+        expressionNodes = [] # The nodes of start and end of the operands inside the expression
 
-        for i in expressionOperands:
-            travelNode = nfa.model(startNode, i)
-            startNode = nfa.newNode()
+        for i in expressionOperands: # Runs the operands first
+            travelNode = nfa.model(startNode, i) 
+            startNode = nfa.newNode() # Generates a new node for the next operand
             expressionNodes.append(travelNode)
 
-        endNode = nfa.newNode()
-        match currentOperation:
+        endNode = nfa.newNode() # Generates the end node of the expression
+        match currentOperation: # Depending on the operation, connects the nodes in a different way
             case '|':
-                print("//OR: "+str(expressionNodes))
+                # print("//OR: "+str(expressionNodes)) # ? <- Only for debbuging
                 nfa.connect(expression, startNode, expressionNodes[0][0], '#')
                 nfa.connect(expression, startNode, expressionNodes[1][0], '#')
                 endNode = nfa.newNode()
@@ -155,38 +160,38 @@ class nfa:
                 nfa.connect(expression, expressionNodes[1][1], endNode, '#')
 
             case '_':
-                print("//CONCAT: "+str(expressionNodes))
+                # print("//CONCAT: "+str(expressionNodes)) # ? <- Only for debbuging
                 i = 0
                 startNode = expressionNodes[0][0]
                 endNode = expressionNodes[len(expressionNodes)-1][1]
-                while (i < len(expressionNodes) - 1):
+                while (i < len(expressionNodes) - 1): # Connects all the nodes that will concatenate
                     nfa.connect(expression, expressionNodes[i][1], expressionNodes[i+1][0], '#')
                     i += 1
 
             case '*':
-                print("//STAR: "+str(expressionNodes))
+                # print("//STAR: "+str(expressionNodes)) # ? <- Only for debbuging
                 startNode = expressionNodes[0][0]
                 nfa.connect(expression, startNode, endNode, '#')
                 nfa.connect(expression, endNode, startNode, '#')
                 nfa.connect(expression, expressionNodes[0][1], endNode, '#')
 
             case '+':
-                print("//PLUS: "+str(expressionNodes))
+                # print("//PLUS: "+str(expressionNodes)) # ? <- Only for debbuging
                 startNode = expressionNodes[0][0]
                 nfa.connect(expression, endNode, startNode, '#')
                 nfa.connect(expression, expressionNodes[0][1], endNode, '#')
 
             case '.':
-                print("//DOT: "+str(expressionNodes))
-                nfa.connect(expression, startNode, endNode, nfa.getValue(expression))
+                # print("//DOT: "+str(expressionNodes)) # ? <- Only for debbuging
+                nfa.connect(expression, startNode, endNode, nfa.getValue(expression)) # It's a single character, uses the nodes and adds it's weight
 
-        return [startNode, endNode]
+        return [startNode, endNode] # Returns the nodes of start and end of the expression
     
     def print(regEx):
-        nfa.newNode()
-        coords = nfa.model(0, preprocessing.prefixNotation(regEx))
-        connections = nfa.connections[:len(nfa.connections)-1]
-        for i in connections:
+        nfa.newNode() # Generates innitial node
+        coords = nfa.model(0, preprocessing.prefixNotation(regEx)) # Get's the start and ending nodes
+        connections = nfa.connections[:len(nfa.connections)-1] # Erases the last node generated (it's empty)
+        for i in connections: # Prints the nodes
             output = str(i[0]) + " => ["
             for j in range(len(i)):
                 if(j == 0): continue

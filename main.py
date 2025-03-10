@@ -1,5 +1,5 @@
 class preprocessing:
-    characters = []
+    characters = [] # ! NEED IMPLEMENTATION OF CHARACTERS AND VERIFY REGEX
 
     operators = ['|', '*', '+']
 
@@ -98,7 +98,6 @@ class preprocessing:
 
         return newRegex
 
-
 class nfa:
     connections = []
     operators = ['|', '*', '+', '_', '.']
@@ -111,7 +110,7 @@ class nfa:
 
     # Connects 2 nodes
     def connect(expression, node1, node2, weight):
-        print(str(node1) + " -> " + str(node2) + '[label="' + str(weight) + '"] //' + expression) # (a|b)*abb  # ? <- Only for debbuging
+        # print(str(node1) + " -> " + str(node2) + '[label="' + str(weight) + '"] //' + expression) # (a|b)*abb  # ? <- Only for debbuging
         nfa.connections[node1].append([node2, weight])
 
     # Given a expression, separates it based on it's operands
@@ -187,21 +186,138 @@ class nfa:
 
         return [startNode, endNode] # Returns the nodes of start and end of the expression
     
-    def print(regEx):
+    def print(regEx, characters):
         nfa.newNode() # Generates innitial node
         coords = nfa.model(0, preprocessing.prefixNotation(regEx)) # Get's the start and ending nodes
         connections = nfa.connections[:len(nfa.connections)-1] # Erases the last node generated (it's empty)
+        print("----RESULTS----\nINPUT:\n" + regEx + "\n\nNFA:")
         for i in connections: # Prints the nodes
             output = str(i[0]) + " => ["
             for j in range(len(i)):
                 if(j == 0): continue
-                output += "(" + str(i[j][0]) + ", " + str(i[j][1]) + ")"
+                output += "('" + str(i[j][0]) + "', '" + str(i[j][1]) + "')"
                 if(j < len(i) - 1): output += ", " 
             output += "]"
             print(output)
-        print("Starting at: " + str(coords[0]))
-        print("Ending at: " + str(coords[1]))
+        print("Accepting state: " + str(coords[1]) + "\n")
+        return [connections, coords[0], coords[1], characters]
 
+
+class dfa:
+    connections = []
+    endNode = 0
+    startNode = 0
+    states = [] # Holds the elements of a state
+    statesConnections = [] # Holds the connections between states
+    acceptingStates = []
+
+    characters = []
+
+    def getEpsilonConnections(index, visited, queue):
+        visited.append(index)
+        queue.append(index)
+
+        for i in dfa.connections[index][1:]:
+            if(i[1] == '#'):
+                if(i[0] not in visited):
+                    dfa.getEpsilonConnections(i[0], visited, queue)
+
+        return list(set(queue))
+    
+    def getConnections(index, weight):
+        fullArray = []
+        for i in dfa.connections[index][1:]:
+            if(i[1] == weight): fullArray.append(i[0])
+        return list(set(fullArray))
+    
+    def eClosure(indexArray):
+        fullArray = []
+        isEnd = False
+        for i in indexArray:
+            fullArray.extend(dfa.getEpsilonConnections(i, [], []))
+        fullArray = list(set(fullArray)) # removes repeated elements and sorts it
+
+        if(dfa.endNode in fullArray): isEnd = True
+        
+        i = 0 # Verifies if the current state has already been created
+        while(i < len(dfa.states)):
+            if(sorted(dfa.states[i]) == sorted(fullArray)):
+                if(isEnd): dfa.acceptingStates.append(i)
+                return i
+            i += 1
+        
+        # In case the state doesn't exist, it will create another one
+        dfa.states.append(fullArray)
+        dfa.statesConnections.append([len(dfa.statesConnections)])
+        if(isEnd): dfa.acceptingStates.append(i)
+        return i
+    
+    def move(startState, weight):
+        fullArray = []
+        for i in dfa.states[startState]: # Repeats for all the elements of the state
+            fullArray.extend(dfa.getConnections(i, weight))
+        fullArray = list(set(fullArray)) # removes repeated elements and sorts it
+
+        return fullArray
+
+    def doState(state):
+        for i in dfa.characters:
+            nodes = dfa.move(state, i)
+
+            if(len(nodes) == 0): continue # Since it has no elements, it cannot connect
+
+            endState = dfa.eClosure(nodes)
+            dfa.statesConnections[state].append([endState, i])
+
+    def getChar(number):
+        number = int(number)
+        state = ""
+        while(number >= 0):
+            state = chr(number % 26 + ord('A')) + state
+            number //= 26
+            number -= 1
+        return state
+
+    def model(auxData):
+        dfa.connections = auxData[0]
+        dfa.startNode = auxData[1]
+        dfa.endNode = auxData[2]
+        dfa.characters = auxData[3]
+
+        dfa.eClosure([dfa.startNode])
+
+        i = 0
+        j = 1
+        while(i < j):
+            dfa.doState(i)
+            i += 1
+            j = len(dfa.states)
+
+        print("DFA:")
+
+        for i in dfa.statesConnections:
+            output = dfa.getChar(i[0]) + " => ["
+            for j in range(len(i)):
+                if(j == 0): continue
+                output += "('" + dfa.getChar(i[j][0]) + "', '" + i[j][1] + "')"
+                if(j < len(i) - 1): output += ", " 
+            output += "]"
+            print(output)
+
+        accepted = list(set(dfa.acceptingStates))
+        output = "Accepting states: ["
+        for i in range(len(accepted)):
+            output += "'" + dfa.getChar(accepted[i]) + "'"
+            if(i < len(accepted) - 1): output += ", " 
+        output += "]"
+        print(output)
+
+        
+
+characters = list(input("Enter the characters in your regular expression: "))
 
 regEx = input("Type your regular expression: ")
-nfa.print(regEx)
+
+auxData = nfa.print("(a|b)*abb", ['a', 'b'])
+
+dfa.model(auxData)

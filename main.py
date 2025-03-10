@@ -169,15 +169,17 @@ class nfa:
 
             case '*':
                 # print("//STAR: "+str(expressionNodes)) # ? <- Only for debbuging
-                startNode = expressionNodes[0][0]
+                midNode = expressionNodes[0][0]
+                nfa.connect(expression, startNode, midNode, '#')
                 nfa.connect(expression, startNode, endNode, '#')
-                nfa.connect(expression, endNode, startNode, '#')
+                nfa.connect(expression, expressionNodes[0][1], midNode, '#')
                 nfa.connect(expression, expressionNodes[0][1], endNode, '#')
 
             case '+':
                 # print("//PLUS: "+str(expressionNodes)) # ? <- Only for debbuging
-                startNode = expressionNodes[0][0]
-                nfa.connect(expression, endNode, startNode, '#')
+                midNode = expressionNodes[0][0]
+                nfa.connect(expression, startNode, midNode, '#')
+                nfa.connect(expression, expressionNodes[0][1], midNode, '#')
                 nfa.connect(expression, expressionNodes[0][1], endNode, '#')
 
             case '.':
@@ -192,6 +194,7 @@ class nfa:
         connections = nfa.connections[:len(nfa.connections)-1] # Erases the last node generated (it's empty)
         print("----RESULTS----\nINPUT:\n" + regEx + "\n\nNFA:")
         for i in connections: # Prints the nodes
+            if(len(i) == 1): continue
             output = str(i[0]) + " => ["
             for j in range(len(i)):
                 if(j == 0): continue

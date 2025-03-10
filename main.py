@@ -318,6 +318,6 @@ characters = list(input("Enter the characters in your regular expression: "))
 
 regEx = input("Type your regular expression: ")
 
-auxData = nfa.print("(a|b)*abb", ['a', 'b'])
+auxData = nfa.print(regEx, characters)
 
 dfa.model(auxData)

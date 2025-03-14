@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <sstream>
 #include "util.h"
 using namespace std;
 
@@ -62,8 +63,8 @@ Preprocessing::Preprocessing(string regex, string usedCharacters) {
 }
 
 /**
- * @brief Obtiene el operador principal a realizar dentro de un 
- * fragmento de una expresión regular.
+ * @brief Obtiene el operador principal a realizar dentro de un fragmento de
+ * una expresión regular.
  * 
  * @param regex Fragmento de expresión regular a evaluar.
  * @return char El operador prinvcipal de dicho framento.
@@ -74,7 +75,8 @@ char Preprocessing::getOperator(string regex) {
     // Contador de paréntesis para no contar expresiones dentro de paréntesis
     int parenthesis = 0; 
 
-    // Verifica si es un 'or' al contar los símbolos que lo representen fuera de paréntesis
+    // Verifica si es un 'or' al contar los símbolos que lo representen 
+    // fuera de paréntesis
     for (int i = 0; i < regex.size(); i++) { 
         if (regex[i] == '(') parenthesis++;
         else if (regex[i] == ')') parenthesis--;
@@ -84,13 +86,14 @@ char Preprocessing::getOperator(string regex) {
     if (regex[regex.size() - 1] == '+') return '+';
     if (regex[regex.size() - 1] == '*') return '*';
 
-    // En caso de que no sea otro operador, se regresa como operador de concatenar
+    // En caso de que no sea otro operador, se regresa como operador
+    // de concatenar
     return '_';
 }
 
 /**
- * @brief Obtiene el índice donde se separa una parte de la expresión de su otra mitad
- * debido al uso de un operador 'or'.
+ * @brief Obtiene el índice donde se separa una parte de la expresión de su
+ * otra mitad debido al uso de un operador 'or'.
  * 
  * @param regex Fragmento de expresión regular a evaluar.
  * @return int El índice del punto de separación.
@@ -101,7 +104,8 @@ int Preprocessing::getSeparation(string regex) {
     // Contador de paréntesis para no contar expresiones dentro de paréntesis
     int parenthesis = 0; 
 
-    // Encuentra el índice donde se encuentra el punto de separación de la expresión
+    // Encuentra el índice donde se encuentra el punto de separación de
+    // la expresión
     for (int i = 0; i < regex.size(); i++) { 
         if (regex[i] == '(') parenthesis++;
         else if (regex[i] == ')') parenthesis--;
@@ -120,7 +124,8 @@ int Preprocessing::getSeparation(string regex) {
  * Complejidad asintótica: O(n²)
  */
 vector<string> Preprocessing::getOperands(string regex) {
-    // Guarda los operandos que se tienen en el fragmento de la expresión regular
+    // Guarda los operandos que se tienen en el fragmento de la 
+    // expresión regular
     vector<string> operands;
     
     // Itera por toda la expresión para encontrar sus operandos
@@ -146,7 +151,8 @@ vector<string> Preprocessing::getOperands(string regex) {
             extra = j - i;
         }
 
-        // En caso de que el siguiente elemento sea un operador como 'uno o más', se le añade otro caracter más
+        // En caso de que el siguiente elemento sea un operador como
+        // 'uno o más', se le añade otro caracter más
         if(j < (regex.size() - 1) && in(operators, regex[j + 1])){
             extra += 1;
         }
@@ -181,7 +187,8 @@ string Preprocessing::cleanRegex(string regex) {
             counter++;
         }
 
-        // En caso de que el paréntesis no sea el elemento final, significa que SI es necesario el paréntesis
+        // En caso de que el paréntesis no sea el elemento final, significa
+        // que SI es necesario el paréntesis
         if(parenthesis == 0 && i < regex.size() - 1) return regex;
     }
 
@@ -189,13 +196,24 @@ string Preprocessing::cleanRegex(string regex) {
     return cleanRegex(regex.substr(1, regex.size()-2));
 }
 
+
+/**
+ * @brief Obtiene una expresión regular en su formato prefijo a partir
+ * de un fragmento de una expresión regular.
+ * 
+ * @param regex Fragmento de expresión regular a evaluar.
+ * @return string El fragmento en formato prefijo.
+ * 
+ * Complejidad asintótica: O(n³)
+ */
 string Preprocessing::notation(string regex) {
     regex = cleanRegex(regex);
     vector<string> operands = getOperands(regex);
     char operation = getOperator(regex);
-    string newRegex = "";
+    string newRegex(1, operation);
 
-    // En caso de que tenga más de un operador, pero no sea un 'or', significa que es una concatenación enrealidad
+    // En caso de que tenga más de un operador, pero no sea un 'or',
+    // significa que es una concatenación enrealidad
     if (operands.size() > 1 && operation != '|') operation = '_';
 
     switch (operation){
@@ -203,22 +221,26 @@ string Preprocessing::notation(string regex) {
             int idSeparation = getSeparation(regex);
             string firstOperand = regex.substr(0, idSeparation);
             string secondOperand = regex.substr(idSeparation + 1);
-            newRegex = operation + "(" + notation(firstOperand) + ")" + "(" + notation(secondOperand) + ")";
+            newRegex += "(" + notation(firstOperand) + ")" + "(" + notation(secondOperand) + ")";
+            break;
         }
 
         case '_': {
             // Si es solo un elemento, se regresa a si mismo
-            if(operands.size() == 1) return '.' + operands[0];
-            newRegex += operation;
-            for(auto i:operands){
-                newRegex += '(' + notation(i) + ')';
+            if(operands.size() == 1){
+                newRegex = "." + operands[0];
+                return newRegex;
             }
+            for(auto i:operands){
+                newRegex += "(" + notation(i) + ")";
+            }
+            break;
         }
 
         default: {
-            newRegex += operation;
             string operand = operands[0].substr(0, operands[0].size() - 1);
-            newRegex += '(' + notation(operand) + ')';
+            newRegex += "(" + notation(operand) + ")";
+            break;
         }
             
     }    
@@ -226,6 +248,14 @@ string Preprocessing::notation(string regex) {
     return newRegex;
 }
 
+/**
+ * @brief Obtiene una expresión regular en su formato prefijo a partir
+ * de una expresión regular.
+ * 
+ * @return string La expresión en formato prefijo.
+ * 
+ * Complejidad asintótica: O(n³)
+ */
 string Preprocessing::notation() {
     return notation(originalRegex);
 }

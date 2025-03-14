@@ -8,9 +8,10 @@ int main(){
     cin >> characters;
 
     string regex;
-    Preprocessing preprocessing = Preprocessing("(a|b)*abb", "ab");
-    cout << preprocessing.notation() << "\n";
+    cout << "Type your regular expression: ";
+    cin >> regex;
 
-    preprocessing = Preprocessing("a+b((abc)|a+)*", "abc");
-    cout << preprocessing.notation();
+    Preprocessing preprocessed(regex, characters);
+
+    cout << preprocessed.notation();
 }

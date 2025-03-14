@@ -1,10 +1,18 @@
+/**
+ * @file preprocess.h
+ * @author Edmundo Canedo Cervantes - A01645576
+ * @brief El archivo contiene la clase que permite preprocesar una
+ * expresión regular para convertirla a su formato prefijo
+ * 
+ * Complejidad asintótica: O(n³)
+ * 
+ * @date 2025-03-14
+ */
 #ifndef PREPROCESS_H
 #define PREPROCESS_H
 
 #include <iostream>
 #include <vector>
-#include <string>
-#include <sstream>
 #include "util.h"
 using namespace std;
 
@@ -14,7 +22,7 @@ using namespace std;
  * @brief Clase que maneja el preprocesamiento de una expresión regular.
  * 
  * Guarda los métodos y atributos necesarios para convertir una expresión
- * regular en su método prefijo.
+ * regular en su formato prefijo.
  */
 class Preprocessing {
     private:

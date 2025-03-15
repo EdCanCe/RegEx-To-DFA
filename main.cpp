@@ -1,5 +1,6 @@
 #include <iostream>
 #include "preprocess.h"
+#include "nfa.h"
 using namespace std;
 
 int main(){
@@ -13,5 +14,8 @@ int main(){
 
     Preprocessing preprocessed(regex, characters);
 
-    cout << preprocessed.notation();
+    cout << "----RESULTS----\n" << "INPUT:\n" << regex << "\n\n";
+
+    NFA nfa(preprocessed.notation());
+    nfa.print();
 }

@@ -321,6 +321,7 @@ characters = list(input("Enter the characters in your regular expression: "))
 
 regEx = input("Type your regular expression: ")
 
+print(preprocessing.prefixNotation(regEx))
 auxData = nfa.print(regEx, characters)
 
 dfa.model(auxData)

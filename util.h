@@ -1,3 +1,12 @@
+/**
+ * @file util.cpp
+ * @author Edmundo Canedo Cervantes - A01645576
+ * @brief Métodos adicionales útiles para correr el programa.
+ *
+ * Complejidad asintótica: O(n)
+ *
+ * @date 2025-03-14
+ */
 #ifndef UTIL_H
 #define UTIL_H
 

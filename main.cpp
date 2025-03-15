@@ -1,6 +1,8 @@
 #include <iostream>
+#include <vector>
 #include "preprocess.h"
 #include "nfa.h"
+#include "dfa.h"
 using namespace std;
 
 int main(){
@@ -17,5 +19,8 @@ int main(){
     cout << "----RESULTS----\n" << "INPUT:\n" << regex << "\n\n";
 
     NFA nfa(preprocessed.notation());
-    nfa.print();
+    pair<int, int> startFinish = nfa.print();
+
+    DFA dfa(nfa.getConnections(), startFinish.first, startFinish.second, vector<char>(characters.begin(), characters.end()));
+    dfa.print();
 }
